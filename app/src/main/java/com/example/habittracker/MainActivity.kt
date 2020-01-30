@@ -2,16 +2,60 @@ package com.example.habittracker
 
 import android.app.Dialog
 import android.content.Context
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
+
+    private class GetHabitsTask : AsyncTask<Int, Int, String>() {
+        val backendURL = "http://100.008.00.1:5070/"
+        override fun doInBackground(vararg params: Int?): String {
+            val result = StringBuilder()
+            try {
+                val url = URL( backendURL + "api/habits/")
+                val urlConnection = url.openConnection() as HttpURLConnection
+                val inStream = urlConnection.inputStream
+                val reader = BufferedReader(InputStreamReader(inStream))
+                var data = reader.read()
+                while (data != -1) {
+                    result.append(data.toChar())
+                    data = reader.read()
+                }
+            } catch (e : IOException) {
+                return e.toString()
+            }
+            return result.toString()
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+            val output = StringBuilder()
+            try {
+                val dataString = JSONObject(result).getString("data")
+                val jsonArray = JSONArray(dataString)
+                for (i in 0..jsonArray.length()) {
+                    val o = jsonArray.getJSONObject(i)
+                    output.append(o.getString("name") + " " + o.getString("notes"))
+                }
+
+            } catch (e: Exception) {}
+            Log.i("JSON", output.toString())
+        }
+    }
 
     /** Invariant: There are no duplicates in habitList */
     private var habitList : ArrayList<String> = ArrayList()
@@ -50,8 +94,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-
-
     /**
      * Effect: Deletes a habit
      */
@@ -76,6 +118,9 @@ class MainActivity : AppCompatActivity() {
         notesTextView.text = notesMap[habitTitleTextView.text.toString()]
 
         dialog.show()
+        val data = GetHabitsTask().execute(1).get()
+        Log.i("data", data)
+        // Toast.makeText(this, data, Toast.LENGTH_LONG).show()
     }
 
     /**
