@@ -1,33 +1,31 @@
 package com.example.habittracker
 
-import android.app.Dialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
-class CustomAdapter(private val nameList: ArrayList<String>, private val context: Context) : RecyclerView.Adapter<CustomAdapter.CustomViewHolder>() {
+class CustomAdapter(private val habitList: ArrayList<Habit>, private val context: Context) : RecyclerView.Adapter<CustomAdapter.CustomViewHolder>() {
 
     class CustomViewHolder : RecyclerView.ViewHolder {
-        companion object {
-            var idCount = 0
-        }
+//        companion object {
+//            var idCount = 0
+//        }
         private val view: View
         val checkBox: CheckBox
-        val infoButton: Button
-        val id: Int
+        private val infoButton: Button
+        // private val id: Int
 
         constructor(view: View) : super(view) {
             this.view = view
             checkBox = view.findViewById(R.id.checkBox)
             infoButton = view.findViewById(R.id.infoButton)
-            id = idCount
-            idCount++
+//            id = idCount
+//            idCount++
         }
     }
 
@@ -42,14 +40,21 @@ class CustomAdapter(private val nameList: ArrayList<String>, private val context
     }
 
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
-        holder.checkBox.text = nameList[position]
+        holder.checkBox.text = habitList[position].name
         holder.checkBox.isChecked = false
         holder.checkBox.setOnClickListener {
-            nameList.remove(holder.checkBox.text.toString())
+            val completedHabit = holder.checkBox.text.toString()
+            for (i in 0..habitList.size) {
+                if (habitList[i].name == completedHabit) {
+                    habitList.removeAt(i)
+                }
+            }
+            // nameList.removeIf(h -> (h.name == holder.checkBox.text.toString()))
+            // nameList.remove(holder.checkBox.text.toString())
             notifyItemRemoved(position)
             Toast.makeText(context, "Habit completed!", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun getItemCount() = nameList.size
+    override fun getItemCount() = habitList.size
 }

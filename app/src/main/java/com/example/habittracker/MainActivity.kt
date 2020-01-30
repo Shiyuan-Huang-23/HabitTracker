@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -21,12 +20,12 @@ import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
-    private class GetHabitsTask : AsyncTask<Int, Int, String>() {
-        val backendURL = "http://100.008.00.1:5070/"
-        override fun doInBackground(vararg params: Int?): String {
+    private class GetJSONTask : AsyncTask<String, Int, String>() {
+        val backendURL = "http://192.168.56.1:5000/"
+        override fun doInBackground(vararg params: String?): String {
             val result = StringBuilder()
             try {
-                val url = URL( backendURL + "api/habits/")
+                val url = URL( backendURL + params[0])
                 val urlConnection = url.openConnection() as HttpURLConnection
                 val inStream = urlConnection.inputStream
                 val reader = BufferedReader(InputStreamReader(inStream))
@@ -40,26 +39,12 @@ class MainActivity : AppCompatActivity() {
             }
             return result.toString()
         }
-
-        override fun onPostExecute(result: String?) {
-            super.onPostExecute(result)
-            val output = StringBuilder()
-            try {
-                val dataString = JSONObject(result).getString("data")
-                val jsonArray = JSONArray(dataString)
-                for (i in 0..jsonArray.length()) {
-                    val o = jsonArray.getJSONObject(i)
-                    output.append(o.getString("name") + " " + o.getString("notes"))
-                }
-
-            } catch (e: Exception) {}
-            Log.i("JSON", output.toString())
-        }
     }
 
     /** Invariant: There are no duplicates in habitList */
-    private var habitList : ArrayList<String> = ArrayList()
-    private var notesMap : HashMap<String, String> = HashMap()
+    private var habitList : ArrayList<Habit> = ArrayList()
+//    private var notesMap : HashMap<String, String> = HashMap()
+//    private var habitIdList : HashMap<String, Int> = HashMap()
     private lateinit var viewManager : RecyclerView.LayoutManager
     private lateinit var viewAdapter : RecyclerView.Adapter<*>
     private lateinit var recyclerView: RecyclerView
@@ -118,9 +103,6 @@ class MainActivity : AppCompatActivity() {
         notesTextView.text = notesMap[habitTitleTextView.text.toString()]
 
         dialog.show()
-        val data = GetHabitsTask().execute(1).get()
-        Log.i("data", data)
-        // Toast.makeText(this, data, Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -130,14 +112,29 @@ class MainActivity : AppCompatActivity() {
         dialog.dismiss()
     }
 
+    /**
+     * Effect: Fills {@code habitList} and {@code notesMap} with appropriate information from
+     * backend on startup.
+     */
+    private fun getHabitsOnCreate() {
+        val json = GetJSONTask().execute("api/habits/").get()
+        try {
+            val data = JSONObject(json).getString("data")
+            val jsonArray = JSONArray(data)
+            for (i in 0..jsonArray.length()) {
+                val o = jsonArray.getJSONObject(i)
+                val habit = Habit(o.getString("name"), o.getInt("id"), o.getString("notes"))
+                habitList.add(habit)
+            }
+
+        } catch (e: Exception) {}
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        habitList = arrayListOf("10 push-ups", "Hug frogs", "Attempt handstands")
-        for (s in habitList) {
-            notesMap[s] = "None"
-        }
+        getHabitsOnCreate()
         viewManager = LinearLayoutManager(this)
         viewAdapter = CustomAdapter(habitList, this)
 
