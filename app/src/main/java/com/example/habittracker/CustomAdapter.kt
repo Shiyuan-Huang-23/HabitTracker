@@ -9,7 +9,7 @@ import android.widget.CheckBox
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
-class CustomAdapter(private val habitList: ArrayList<Habit>, private val context: Context) : RecyclerView.Adapter<CustomAdapter.CustomViewHolder>() {
+class CustomAdapter(private val habitList: ArrayList<String>, private val context: Context) : RecyclerView.Adapter<CustomAdapter.CustomViewHolder>() {
 
     class CustomViewHolder : RecyclerView.ViewHolder {
 //        companion object {
@@ -40,15 +40,11 @@ class CustomAdapter(private val habitList: ArrayList<Habit>, private val context
     }
 
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
-        holder.checkBox.text = habitList[position].name
+        holder.checkBox.text = habitList[position]
         holder.checkBox.isChecked = false
         holder.checkBox.setOnClickListener {
             val completedHabit = holder.checkBox.text.toString()
-            for (i in 0..habitList.size) {
-                if (habitList[i].name == completedHabit) {
-                    habitList.removeAt(i)
-                }
-            }
+            habitList.remove(completedHabit)
             // nameList.removeIf(h -> (h.name == holder.checkBox.text.toString()))
             // nameList.remove(holder.checkBox.text.toString())
             notifyItemRemoved(position)

@@ -42,7 +42,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Invariant: There are no duplicates in habitList */
-    private var habitList : ArrayList<Habit> = ArrayList()
+    private var habitList : ArrayList<String> = ArrayList()
+    private var habitMap : HashMap<String, Int> = HashMap()
 //    private var notesMap : HashMap<String, String> = HashMap()
 //    private var habitIdList : HashMap<String, Int> = HashMap()
     private lateinit var viewManager : RecyclerView.LayoutManager
@@ -66,7 +67,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             habitList.add(habit)
             addHabitEditText.text.clear()
-            notesMap[habit] = dialog.findViewById<EditText>(R.id.notesEditText).text.toString()
+            TODO("Add notes to habit on creation")
+            // notesMap[habit] = dialog.findViewById<EditText>(R.id.notesEditText).text.toString()
             dialog.dismiss()
         }
     }
@@ -99,8 +101,9 @@ class MainActivity : AppCompatActivity() {
         val habitTitleTextView = dialog.findViewById<TextView>(R.id.habitTitleTextView)
         habitTitleTextView.text = (((view as Button).parent) as LinearLayout).findViewById<CheckBox>(R.id.checkBox).text
 
-        val notesTextView = dialog.findViewById<TextView>(R.id.notesTextView)
-        notesTextView.text = notesMap[habitTitleTextView.text.toString()]
+        TODO("Pull habit notes from backend on show info")
+        // val notesTextView = dialog.findViewById<TextView>(R.id.notesTextView)
+        // notesTextView.text = notesMap[habitTitleTextView.text.toString()]
 
         dialog.show()
     }
@@ -123,8 +126,9 @@ class MainActivity : AppCompatActivity() {
             val jsonArray = JSONArray(data)
             for (i in 0..jsonArray.length()) {
                 val o = jsonArray.getJSONObject(i)
-                val habit = Habit(o.getString("name"), o.getInt("id"), o.getString("notes"))
+                val habit = o.getString("name")
                 habitList.add(habit)
+                habitMap[habit] = o.getInt("id")
             }
 
         } catch (e: Exception) {}
