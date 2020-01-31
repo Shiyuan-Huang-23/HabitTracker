@@ -20,12 +20,17 @@ import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
+    private val backendURL = "http://192.168.56.1:5000/"
+
+    /**
+     * Makes a get request to the specified route and returns the JSON obtained.
+     * The first argument is the address of the server, and the second is the specific route.
+     */
     private class GetJSONTask : AsyncTask<String, Int, String>() {
-        val backendURL = "http://192.168.56.1:5000/"
         override fun doInBackground(vararg params: String?): String {
             val result = StringBuilder()
             try {
-                val url = URL( backendURL + params[0])
+                val url = URL(params[0] + params[1])
                 val urlConnection = url.openConnection() as HttpURLConnection
                 val inStream = urlConnection.inputStream
                 val reader = BufferedReader(InputStreamReader(inStream))
@@ -40,6 +45,27 @@ class MainActivity : AppCompatActivity() {
             return result.toString()
         }
     }
+
+    private class PostJSONTask : AsyncTask<String, Int, String>() {
+        override fun doInBackground(vararg params: String?): String {
+            val result = StringBuilder()
+            try {
+                val url = URL(params[0] + params[1])
+                val urlConnection = url.openConnection() as HttpURLConnection
+                val inStream = urlConnection.inputStream
+                val reader = BufferedReader(InputStreamReader(inStream))
+                var data = reader.read()
+                while (data != -1) {
+                    result.append(data.toChar())
+                    data = reader.read()
+                }
+            } catch (e : IOException) {
+                return e.toString()
+            }
+            return result.toString()
+        }
+    }
+
 
     /** Invariant: There are no duplicates in habitList */
     private var habitList : ArrayList<String> = ArrayList()
@@ -120,7 +146,7 @@ class MainActivity : AppCompatActivity() {
      * backend on startup.
      */
     private fun getHabitsOnCreate() {
-        val json = GetJSONTask().execute("api/habits/").get()
+        val json = GetJSONTask().execute(backendURL, "api/habits/").get()
         try {
             val data = JSONObject(json).getString("data")
             val jsonArray = JSONArray(data)
