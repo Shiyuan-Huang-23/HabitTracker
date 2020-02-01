@@ -2,7 +2,6 @@ package com.example.habittracker
 
 import android.app.Dialog
 import android.content.Context
-import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -12,60 +11,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 
 class MainActivity : AppCompatActivity() {
 
     private val backendURL = "http://192.168.56.1:5000/"
-
-    /**
-     * Makes a get request to the specified route and returns the JSON obtained.
-     * The first argument is the address of the server, and the second is the specific route.
-     */
-    private class GetJSONTask : AsyncTask<String, Int, String>() {
-        override fun doInBackground(vararg params: String?): String {
-            val result = StringBuilder()
-            try {
-                val url = URL(params[0] + params[1])
-                val urlConnection = url.openConnection() as HttpURLConnection
-                val inStream = urlConnection.inputStream
-                val reader = BufferedReader(InputStreamReader(inStream))
-                var data = reader.read()
-                while (data != -1) {
-                    result.append(data.toChar())
-                    data = reader.read()
-                }
-            } catch (e : IOException) {
-                return e.toString()
-            }
-            return result.toString()
-        }
-    }
-
-    private class PostJSONTask : AsyncTask<String, Int, String>() {
-        override fun doInBackground(vararg params: String?): String {
-            val result = StringBuilder()
-            try {
-                val url = URL(params[0] + params[1])
-                val urlConnection = url.openConnection() as HttpURLConnection
-                val inStream = urlConnection.inputStream
-                val reader = BufferedReader(InputStreamReader(inStream))
-                var data = reader.read()
-                while (data != -1) {
-                    result.append(data.toChar())
-                    data = reader.read()
-                }
-            } catch (e : IOException) {
-                return e.toString()
-            }
-            return result.toString()
-        }
-    }
-
 
     /** Invariant: There are no duplicates in habitList */
     private var habitList : ArrayList<String> = ArrayList()
@@ -77,6 +26,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var dialog: Dialog
 
+    /** Displays the given error message. */
+    fun displayError(errorMessage: String) {
+        Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
+    }
+
     /**
      * Effect: Adds a habit to Today's Habits
      */
@@ -87,14 +41,18 @@ class MainActivity : AppCompatActivity() {
         val addHabitEditText = dialog.findViewById<EditText>(R.id.habitEditText)
         val habit = addHabitEditText.text.toString()
         if (habit.isEmpty()) {
-            Toast.makeText(applicationContext, "Please enter a name for your habit.", Toast.LENGTH_SHORT).show()
-        } else if (habitList.contains(habit)) {
-            Toast.makeText(applicationContext, "This habit has already been created.", Toast.LENGTH_SHORT).show()
+            displayError("Please enter a name for your habit.")
+        } else if (habitMap.contains(habit)) {
+            displayError("This habit has already been created.")
         } else {
             habitList.add(habit)
             addHabitEditText.text.clear()
-            TODO("Add notes to habit on creation")
-            // notesMap[habit] = dialog.findViewById<EditText>(R.id.notesEditText).text.toString()
+            val json = JSONObject()
+            json.put("name", habit)
+            json.put("notes", dialog.findViewById<EditText>(R.id.notesEditText).text.toString())
+            val response = PostJSONTask().execute(backendURL, "api/habits/", json.toString()).get()
+            val responseJson = JSONObject(response)
+            habitMap[habit] = responseJson.getJSONObject("data").getInt("id")
             dialog.dismiss()
         }
     }
@@ -142,7 +100,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Effect: Fills {@code habitList} and {@code notesMap} with appropriate information from
+     * Effect: Fills habitList and notesMap with appropriate information from
      * backend on startup.
      */
     private fun getHabitsOnCreate() {
