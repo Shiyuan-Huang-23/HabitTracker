@@ -51,9 +51,11 @@ class PostJSONTask : AsyncTask<String, Int, String>() {
             urlConnection.setRequestProperty("Accept", "application/json")
             urlConnection.doOutput = true
 
-            val outputStream = DataOutputStream(urlConnection.outputStream)
-            outputStream.writeBytes(params[2])
-            outputStream.close()
+            if (params.size > 2) {
+                val outputStream = DataOutputStream(urlConnection.outputStream)
+                outputStream.writeBytes(params[2])
+                outputStream.close()
+            }
             urlConnection.connect()
 
             val inStream = urlConnection.inputStream

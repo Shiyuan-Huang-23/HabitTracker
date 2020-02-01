@@ -36,12 +36,12 @@ class CustomAdapter(private val habitList: ArrayList<String>, private val contex
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
         holder.checkBox.text = habitList[position]
         holder.checkBox.isChecked = false
-        holder.checkBox.setOnClickListener {
-            val completedHabit = holder.checkBox.text.toString()
-            habitList.remove(completedHabit)
-            notifyItemRemoved(position)
-            Toast.makeText(context, "Habit completed!", Toast.LENGTH_SHORT).show()
-        }
+//        holder.checkBox.setOnClickListener {
+//            val completedHabit = holder.checkBox.text.toString()
+//            habitList.remove(completedHabit)
+//            notifyItemRemoved(position)
+//            Toast.makeText(context, "Habit completed!", Toast.LENGTH_SHORT).show()
+//        }
     }
 
     override fun getItemCount() = habitList.size
