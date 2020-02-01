@@ -12,20 +12,14 @@ import androidx.recyclerview.widget.RecyclerView
 class CustomAdapter(private val habitList: ArrayList<String>, private val context: Context) : RecyclerView.Adapter<CustomAdapter.CustomViewHolder>() {
 
     class CustomViewHolder : RecyclerView.ViewHolder {
-//        companion object {
-//            var idCount = 0
-//        }
         private val view: View
         val checkBox: CheckBox
         private val infoButton: Button
-        // private val id: Int
 
         constructor(view: View) : super(view) {
             this.view = view
             checkBox = view.findViewById(R.id.checkBox)
             infoButton = view.findViewById(R.id.infoButton)
-//            id = idCount
-//            idCount++
         }
     }
 
@@ -45,8 +39,6 @@ class CustomAdapter(private val habitList: ArrayList<String>, private val contex
         holder.checkBox.setOnClickListener {
             val completedHabit = holder.checkBox.text.toString()
             habitList.remove(completedHabit)
-            // nameList.removeIf(h -> (h.name == holder.checkBox.text.toString()))
-            // nameList.remove(holder.checkBox.text.toString())
             notifyItemRemoved(position)
             Toast.makeText(context, "Habit completed!", Toast.LENGTH_SHORT).show()
         }

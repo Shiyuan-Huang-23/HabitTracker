@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.SpannableStringBuilder
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -19,17 +20,10 @@ class MainActivity : AppCompatActivity() {
     /** Invariant: There are no duplicates in habitList */
     private var habitList : ArrayList<String> = ArrayList()
     private var habitMap : HashMap<String, Int> = HashMap()
-//    private var notesMap : HashMap<String, String> = HashMap()
-//    private var habitIdList : HashMap<String, Int> = HashMap()
     private lateinit var viewManager : RecyclerView.LayoutManager
     private lateinit var viewAdapter : RecyclerView.Adapter<*>
     private lateinit var recyclerView: RecyclerView
     private lateinit var dialog: Dialog
-
-    /** Displays the given error message. */
-    fun displayError(errorMessage: String) {
-        Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
-    }
 
     /**
      * Effect: Adds a habit to Today's Habits
@@ -47,12 +41,59 @@ class MainActivity : AppCompatActivity() {
         } else {
             habitList.add(habit)
             addHabitEditText.text.clear()
-            val json = JSONObject()
-            json.put("name", habit)
-            json.put("notes", dialog.findViewById<EditText>(R.id.notesEditText).text.toString())
-            val response = PostJSONTask().execute(backendURL, "api/habits/", json.toString()).get()
-            val responseJson = JSONObject(response)
-            habitMap[habit] = responseJson.getJSONObject("data").getInt("id")
+            val postJson = JSONObject()
+            postJson.put("name", habit)
+            postJson.put("notes", dialog.findViewById<EditText>(R.id.notesEditText).text.toString())
+            val jsonStr = PostJSONTask().execute(backendURL, "api/habits/", postJson.toString()).get()
+            val json = JSONObject(jsonStr)
+            habitMap[habit] = json.getJSONObject("data").getInt("id")
+            dialog.dismiss()
+        }
+    }
+
+    /**
+     * Effect: Deletes a habit
+     */
+    fun deleteHabit(view: View) {
+        val habit = dialog.findViewById<TextView>(R.id.habitTitleTextView).text.toString()
+
+        val id = habitMap[habit]
+        DeleteJSONTask().execute(backendURL, "api/habits/$id/")
+
+        habitMap.remove(habit)
+        val index = habitList.indexOf(habit)
+        habitList.remove(habit)
+        viewAdapter.notifyItemRemoved(index)
+
+        dialog.dismiss()
+    }
+
+    fun editHabit(view: View) {
+        val manager : InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        manager.hideSoftInputFromWindow(view.windowToken, 0)
+
+        val habitEditText = dialog.findViewById<EditText>(R.id.habitEditText)
+        val newHabit = habitEditText.text.toString()
+        val oldHabit = habitEditText.tag as String
+        if (newHabit.isEmpty()) {
+            displayError("Please enter a name for your habit.")
+        } else if (habitMap.contains(newHabit) && newHabit != oldHabit) {
+            displayError("This habit has already been created.")
+        } else {
+            habitEditText.text.clear()
+            val id = habitMap[oldHabit]
+            val postJson = JSONObject()
+            postJson.put("name", newHabit)
+            postJson.put("notes", dialog.findViewById<EditText>(R.id.notesEditText).text.toString())
+            val jsonStr = PostJSONTask().execute(backendURL, "api/habit/$id/", postJson.toString()).get()
+            val json = JSONObject(jsonStr)
+            habitMap[newHabit] = json.getJSONObject("data").getInt("id")
+
+            val index = habitList.indexOf(oldHabit)
+            habitList.remove(oldHabit)
+            viewAdapter.notifyItemRemoved(index)
+            habitList.add(index, newHabit)
+            viewAdapter.notifyItemInserted(index)
             dialog.dismiss()
         }
     }
@@ -66,30 +107,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Effect: Deletes a habit
-     */
-    fun deleteHabit(view: View) {
-        val habit = dialog.findViewById<TextView>(R.id.habitTitleTextView).text.toString()
-        val index = habitList.indexOf(habit)
-        habitList.remove(habit)
-        viewAdapter.notifyItemRemoved(index)
-        dialog.dismiss()
-    }
-
-    /**
      * Effect: Displays a habit's information (notes, etc.) as well as Edit and Delete options
      */
     fun showInfo(view: View) {
         dialog.setContentView(R.layout.habit_info)
 
         val habitTitleTextView = dialog.findViewById<TextView>(R.id.habitTitleTextView)
-        habitTitleTextView.text = (((view as Button).parent) as LinearLayout).findViewById<CheckBox>(R.id.checkBox).text
+        val habit = (((view as Button).parent) as LinearLayout).findViewById<CheckBox>(R.id.checkBox).text
+        habitTitleTextView.text = habit
 
-        TODO("Pull habit notes from backend on show info")
-        // val notesTextView = dialog.findViewById<TextView>(R.id.notesTextView)
-        // notesTextView.text = notesMap[habitTitleTextView.text.toString()]
+        val id = habitMap[habit]
+        val jsonStr = GetJSONTask().execute(backendURL, "api/habit/$id/").get()
+        val json = JSONObject(jsonStr)
+
+        val notesTextView = dialog.findViewById<TextView>(R.id.notesTextView)
+        notesTextView.text = json.getJSONObject("data").getString("notes")
 
         dialog.show()
+    }
+
+    /**
+     * Effect: Displays the Edit Habit Dialog
+     */
+    fun displayEditHabitDialog(view: View) {
+        dialog.setContentView(R.layout.edit_habit)
+        val parent = (((view as Button).parent) as LinearLayout).parent as LinearLayout
+        val habitEditText = dialog.findViewById<EditText>(R.id.habitEditText)
+        val habit = parent.findViewById<TextView>(R.id.habitTitleTextView).text
+        habitEditText.text = SpannableStringBuilder(habit)
+        habitEditText.tag = habit.toString()
+        val notesEditText = dialog.findViewById<EditText>(R.id.notesEditText)
+        notesEditText.text = SpannableStringBuilder(parent.findViewById<TextView>(R.id.notesTextView).text)
     }
 
     /**
@@ -97,6 +145,11 @@ class MainActivity : AppCompatActivity() {
      */
     fun closeDialog(view: View) {
         dialog.dismiss()
+    }
+
+    /** Displays the given error message. */
+    private fun displayError(errorMessage: String) {
+        Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
     }
 
     /**
