@@ -223,8 +223,6 @@ class MainActivity : AppCompatActivity() {
             val debugging = JSONObject(habitEvents).getString("data")
             Log.i("JSON", debugging)
             Log.i("Length", eventJson.length().toString())
-
-            val parsePos = ParsePosition(0)
             for (i in 0 until eventJson.length()) {
                 val eventObj = eventJson.getJSONObject(i)
                 var color = Color.GREEN
@@ -233,11 +231,13 @@ class MainActivity : AppCompatActivity() {
                     color = Color.RED
                 }
                 Log.i("date", eventObj.getString("date"))
-                val date = dateFormat.parse(eventObj.getString("date"), parsePos)
-                val epochTime: Long = date.time + 18000000
+                val date = dateFormat.parse(eventObj.getString("date"), ParsePosition(0))
+                if (date != null) {
+                    val epochTime: Long = date.time + 18000000
 
-                val event = Event(color, epochTime, eventObj.getString("skip_note"))
-                calendar.addEvent(event)
+                    val event = Event(color, epochTime, eventObj.getString("skip_note"))
+                    calendar.addEvent(event)
+                }
             }
 
         } else {
