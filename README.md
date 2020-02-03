@@ -12,6 +12,8 @@ Note that this app may be used with or without a backend, which can be toggled b
 
 The backend for this app can be found [here](https://github.com/Shiyuan-Huang-23/habit_tracker_backend).
 
+The library used for the mini-calendar can be found [here](https://github.com/SundeepK/CompactCalendarView).
+
 ## Homepage
 ![Screenshot of HabitTracker homepage](app/src/main/res/screenshots/homepage.jpg)
 ## Create Habit
